@@ -45,17 +45,36 @@ middlep = middle(probabilidades)
 
 group1= probabilidades[:middlep]
 group2 = probabilidades[middlep:]
-print(group1,group2)
 code1 = [0] * len(group1)
-code2 = [1] * len(group2) 
+code2 = [1] * len(group2)
+def g1(lists):
+    code4 = [0] * len(lists)
+    a = middle(lists)
+    t1,t2 = group1[:a],group2[a:]
+    for i in range(len(t1)-1):
+        if t1[i] >= t1[i+1]:
+            code4[i] = str(code4[i]) + '0'
+            for x in code4[i+1:]:
+                code4[code4.index(x)]  =  str(code4[code.index(x)]) + '1'
+    return(code4)
+
+def g2(lists):
+    a = middle(lists)
+    code3 = [1] * len(lists)
+    t1,t2 = group1[:a],group2[a:]
+    for i in range(len(t1)-1):
+        if t1[i] >= t1[i+1]:
+            code3[i] = str(code3[i]) + '0'
+            for x in code3[i+1:]:
+                code3[code3.index(x)]  =  str(code3[code3.index(x)]) + '1'
+    return(code3)
+
 
 for i in range(len(group1)-1):
     if group1[i] >= group1[i+1]:
         code1[i] = str(code1[i]) + '0'
         for x in code1[i+1:]:
            code1[code1.index(x)]  =  str(code1[code1.index(x)]) + '1'
-
-middle(group2)
 
 for j in range(len(group2)-1):
     if group2[j] >= group2[j+1]:
@@ -68,6 +87,7 @@ code = code1 + code2
 df['Code'] = code
 
 print(df)
+print(g2(group2))
 
 
 
