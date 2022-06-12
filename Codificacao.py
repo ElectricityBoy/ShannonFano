@@ -1,10 +1,18 @@
 #Importing some libraries
 import numpy as np
 import pandas as pd
+import math
 
 #Creating a function to separate unique simbols from a string
 def unique(list1):
     x = np.array(list1)
+
+#Creating a function to calculate the entropy
+def calculate_entropy(args=[]):
+    entropy = 0
+    for p, l in zip(args, map(lambda i: math.log(i, 2), args)):
+        entropy += p*l
+    return -entropy
 
 #Receiving a word list
 word = list(input('Insira uma palavra/frase: ' ))
@@ -43,10 +51,47 @@ def middle(lists):
     
 middlep = middle(probabilidades)
 
-group1= probabilidades[:middlep]
-group2 = probabilidades[middlep:]
+group1,simbols1= probabilidades[:middlep],simbols[:middlep]
+group2,simbols2 = probabilidades[middlep:],simbols[middlep:]
 code1 = [0] * len(group1)
 code2 = [1] * len(group2)
+code = {}
+for i in simbols1:
+    code[i] = code1[simbols1.index(i)]
+for j in simbols2:
+    code[j] = code2[simbols2.index(j)]
+
+
+
+out = []
+out.append(probabilidades)
+count = 0
+temp = []
+
+
+for i in range(len(probabilidades)+1):
+    a = middle(out[i])
+    if (a == 2 and len(out)==1) or (a ==2 and len(out)>1):
+        out.append(out[i][:a])
+        temp.append(out[i][a:])
+        out.pop(0)
+        break
+    else:
+        out.append(out[i][:a])
+        temp.append(out[i][a:])
+    
+
+for j in range(len(temp)):
+    count +=1
+    a = middle(temp[i])
+    if (a==2 and len(temp[i])==2) or (a==2 and len(temp)>1):
+        break
+    else:
+        temp.append(temp[i][:a])
+        temp.append(temp[i][a:])
+print(out)
+
+
 def g1(lists):
     code4 = [0] * len(lists)
     a = middle(lists)
@@ -55,7 +100,7 @@ def g1(lists):
         if t1[i] >= t1[i+1]:
             code4[i] = str(code4[i]) + '0'
             for x in code4[i+1:]:
-                code4[code4.index(x)]  =  str(code4[code.index(x)]) + '1'
+                code4[code4.index(x)]  =  str(code4[code4.index(x)]) + '1'
     return(code4)
 
 def g2(lists):
@@ -81,15 +126,24 @@ for j in range(len(group2)-1):
         code2[j] = str(code2[j]) + '0'
         for x in code2[j+1:]:
            code2[code2.index(x)]  =  str(code2[code2.index(x)]) + '1'
-           
-code = code1 + code2
+
+
+
+
+'''
+code = g1(group1) + g2(group2) 
 
 df['Code'] = code
 
+
+
+print('=-'*20)
 print(df)
-print(g2(group2))
+print('=-'*20)
+print('The entropy is: ',calculate_entropy(probabilidades))
+print(g1(group1))
 
 
-
+'''
            
 
