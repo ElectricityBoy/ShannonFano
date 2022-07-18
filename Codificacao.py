@@ -1,149 +1,131 @@
-#Importing some libraries
-import numpy as np
-import pandas as pd
-import math
+#Importando bibliotecas 
+from collections import Counter # Importação de uma ferramenta utilizado para realizar contagens de maneira mais rápida e prática
+import numpy as np # Implementação de vetores
+import operator # Utilização dos operadores intrínsecos da linguagem para utilização da orientação a objetos
+import pandas as pd #Biblioteca para criação de dataframe
+import math #Biblioteca para operações matematicas. Nesse trabalho foi utilizado para calcular o Log em especifico
 
-#Creating a function to separate unique simbols from a string
-def unique(list1):
-    x = np.array(list1)
+#Função para calcular a entropia
+def entropy(args=[]):
+  entropy = 0
+  for p, l in zip(args, map(lambda i: math.log(i, 2), args)):
+    entropy += p*l
+  return -entropy
 
-#Creating a function to calculate the entropy
-def calculate_entropy(args=[]):
-    entropy = 0
-    for p, l in zip(args, map(lambda i: math.log(i, 2), args)):
-        entropy += p*l
-    return -entropy
+#Função para descofificar a string
 
-#Receiving a word list
+def decode(encoded_string, dictionary):
+    holder = []
+    codes = list(dictionary.values())
+    symbols = list(dictionary.keys())
+    inv_dictionary = dict(zip(codes, symbols))
+    while(len(encoded_string) != 0):
+        for code in codes:
+            if encoded_string.startswith(code):
+                holder.append(inv_dictionary.get(code))
+                encoded_string = encoded_string[len(code):]
+    return holder
+#Criando uma classe chamada ShannonFano para a realização do método
+
+class Shannon_Fano(object):
+    #Contrutor da classe para a designação dos parametros utilizaods
+    def __init__(self):
+        self.sorted_s = []
+        self.char_dict = dict()
+        self.encoded_dict = dict()
+        self.encoded_string = ''
+
+    #Função para a leitura do dicionario e construção da árvore   
+    def code_tree(self, symbols):
+        if len(symbols)==2:
+            self.encoded_dict[symbols[0]] += '0'
+            self.encoded_dict[symbols[1]] += '1'
+        elif len(symbols)>2:
+            breaking_index = self.break_the_node(symbols)
+            for i in range(len(symbols)):
+                left_part = i<=breaking_index
+                if left_part:
+                    self.encoded_dict[symbols[i]] += '0'
+                else:
+                    self.encoded_dict[symbols[i]] += '1'
+            self.code_tree(symbols[:breaking_index+1])
+            self.code_tree(symbols[breaking_index+1:])
+                    
+                
+    #Função para fazer a contagem dos caracteres da string
+    def make_count(self):
+        self.char_dict = dict(Counter(self.sentence))
+        char_ls = sorted(self.char_dict.items(), key=operator.itemgetter(1),reverse=True)
+        sorted_s = []
+        for i in char_ls :
+            sorted_s.append(i[0])
+        return self.char_dict, sorted_s
+
+    
+    #Função para identificar quando a árvore deverá parar de ser ramificada
+    def break_the_node(self, node):
+        total = 0
+        for i in range(len(node)):
+            total += self.char_dict[node[i]]
+        length = len(node)
+        count = 0
+        last_char_index = 0
+        for i in range(length):
+            count += self.char_dict[node[i]]
+            if (count - (total/2) < 0):
+                last_char_index += 1
+        return last_char_index
+
+    
+    #Função para criação da tabela e exibição dos resultados
+    def table(self,s):
+        x = np.array(s)
+        table = dict()
+        
+        for i in s:
+            table[i]= s.count(i)
+
+        df = pd.DataFrame(list(table.items()),columns = ['Símbolos','Frequência'])
+        total = sum(table.values())
+        df['P(i)'] = df['Frequência']/total
+        df = df.sort_values(by=['Frequência'], ascending=False).reset_index()
+        df['Codificação']  = list(self.encoded_dict.values())
+
+        print("-="*20)
+        print(df)
+        print("-="*20)
+        print('A entropia calculada é: ',entropy(list(df['P(i)'])))
+    
+      
+    #Função para exibição da palavra codificada  
+    def compressed(self):
+        print("-="*20)
+        print("A palavra codificada é:")
+        codeword = ''
+        for ch in self.sentence:
+            codeword += self.encoded_dict[ch]
+
+        print(codeword,'\n')
+        print("-="*20)
+        print("A palavra decodificada é:")
+        return decode(codeword,self.encoded_dict) #Retorna a palavra decodificada
+    
+      
+
+    #Implementação de um dicionario com os respectivos caracteres e seus códigos gerados
+    def encode(self, s):
+        self.sentence = s
+        self.total = len(s)
+        self.char_dict, self.sorted_s = self.make_count() 
+        self.encoded_dict = {new_list: '' for new_list in self.sorted_s}
+        self.code_tree(self.sorted_s)
+        for ch in self.sentence:
+            self.encoded_string += self.encoded_dict[ch]
+        return self.encoded_string
+      
+
 word = list(input('Insira uma palavra/frase: ' ))
-#Creating a variable with unique values
-simbolos = unique(word)
-table = dict()
-for i in word:
-    table[i]= word.count(i)
-#Creating a dataframe
-df = pd.DataFrame(list(table.items()),columns = ['Simbolos','Frequência']) 
-total = sum(table.values())
-df['P(i)'] = df['Frequência']/total
-
-#Step 2 
-df = df.sort_values(by=['Frequência'], ascending=False).reset_index()
-
-#Slice in groups
-probabilidades = list(df['P(i)'])
-simbols = list(df['Simbolos'])
-
-#Find the middle index
-
-
-def middle(lists):
-    a = True
-    index = 0
-    while a == True:
-        soma = probabilidades[index]
-        if round(soma) == round(sum(probabilidades[index:])):
-            a = False
-        else:
-            index+=1
-        if index == len(probabilidades):
-            break
-    return(index)
-    
-middlep = middle(probabilidades)
-
-group1,simbols1= probabilidades[:middlep],simbols[:middlep]
-group2,simbols2 = probabilidades[middlep:],simbols[middlep:]
-code1 = [0] * len(group1)
-code2 = [1] * len(group2)
-code = {}
-for i in simbols1:
-    code[i] = code1[simbols1.index(i)]
-for j in simbols2:
-    code[j] = code2[simbols2.index(j)]
-
-
-
-out = []
-out.append(probabilidades)
-count = 0
-temp = []
-
-
-for i in range(len(probabilidades)+1):
-    a = middle(out[i])
-    if (a == 2 and len(out)==1) or (a ==2 and len(out)>1):
-        out.append(out[i][:a])
-        temp.append(out[i][a:])
-        out.pop(0)
-        break
-    else:
-        out.append(out[i][:a])
-        temp.append(out[i][a:])
-    
-
-for j in range(len(temp)):
-    count +=1
-    a = middle(temp[i])
-    if (a==2 and len(temp[i])==2) or (a==2 and len(temp)>1):
-        break
-    else:
-        temp.append(temp[i][:a])
-        temp.append(temp[i][a:])
-print(out)
-
-
-def g1(lists):
-    code4 = [0] * len(lists)
-    a = middle(lists)
-    t1,t2 = group1[:a],group2[a:]
-    for i in range(len(t1)-1):
-        if t1[i] >= t1[i+1]:
-            code4[i] = str(code4[i]) + '0'
-            for x in code4[i+1:]:
-                code4[code4.index(x)]  =  str(code4[code4.index(x)]) + '1'
-    return(code4)
-
-def g2(lists):
-    a = middle(lists)
-    code3 = [1] * len(lists)
-    t1,t2 = group1[:a],group2[a:]
-    for i in range(len(t1)-1):
-        if t1[i] >= t1[i+1]:
-            code3[i] = str(code3[i]) + '0'
-            for x in code3[i+1:]:
-                code3[code3.index(x)]  =  str(code3[code3.index(x)]) + '1'
-    return(code3)
-
-
-for i in range(len(group1)-1):
-    if group1[i] >= group1[i+1]:
-        code1[i] = str(code1[i]) + '0'
-        for x in code1[i+1:]:
-           code1[code1.index(x)]  =  str(code1[code1.index(x)]) + '1'
-
-for j in range(len(group2)-1):
-    if group2[j] >= group2[j+1]:
-        code2[j] = str(code2[j]) + '0'
-        for x in code2[j+1:]:
-           code2[code2.index(x)]  =  str(code2[code2.index(x)]) + '1'
-
-
-
-
-'''
-code = g1(group1) + g2(group2) 
-
-df['Code'] = code
-
-
-
-print('=-'*20)
-print(df)
-print('=-'*20)
-print('The entropy is: ',calculate_entropy(probabilidades))
-print(g1(group1))
-
-
-'''
-           
-
+shf = Shannon_Fano()
+shf.encode(word)
+shf.table(word)
+shf.compressed()
